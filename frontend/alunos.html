@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Alunos - Controle de Presença</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+  <div class="container py-4">
+    <h1 class="mb-4 text-center">Lista de Alunos</h1>
+
+    <div class="card shadow mb-4">
+      <div class="card-body">
+        <form id="formCadastro" class="row g-3">
+          <div class="col-md-3">
+            <input type="text" class="form-control" placeholder="Matrícula" id="matricula" required>
+          </div>
+          <div class="col-md-3">
+            <input type="text" class="form-control" placeholder="Nome" id="nome" required>
+          </div>
+          <div class="col-md-3">
+            <input type="email" class="form-control" placeholder="Email" id="email">
+          </div>
+          <div class="col-md-3">
+            <input type="password" class="form-control" placeholder="Senha" id="senha" required>
+          </div>
+          <div class="col-12 text-end">
+            <button type="submit" class="btn btn-success mt-2">Cadastrar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped table-hover">
+        <thead class="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>Matrícula</th>
+            <th>Nome</th>
+            <th>Email</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-alunos">
+          <!-- Linhas serão inseridas aqui via JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const urlAPI = "http://localhost:8080/alunos";
+
+    async function listarAlunos() {
+      const res = await fetch(urlAPI);
+      const alunos = await res.json();
+
+      const tabela = document.getElementById("tabela-alunos");
+      tabela.innerHTML = "";
+
+      alunos.forEach(aluno => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td>${aluno.id}</td>
+          <td>${aluno.matricula}</td>
+          <td>${aluno.nome}</td>
+          <td>${aluno.email || ''}</td>
+          <td>
+            <button class="btn btn-danger btn-sm" onclick="deletarAluno(${aluno.id})">Excluir</button>
+          </td>
+        `;
+
+        tabela.appendChild(tr);
+      });
+    }
+
+    async function cadastrarAluno(event) {
+      event.preventDefault();
+
+      const aluno = {
+        matricula: document.getElementById("matricula").value,
+        nome: document.getElementById("nome").value,
+        email: document.getElementById("email").value,
+        senha: document.getElementById("senha").value,
+      };
+
+      const res = await fetch(urlAPI, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(aluno)
+      });
+
+      if (res.ok) {
+        document.getElementById("formCadastro").reset();
+        listarAlunos();
+      } else {
+        const texto = await res.text();
+        alert("Erro: " + texto);
+      }
+    }
+
+    async function deletarAluno(id) {
+      if (!confirm("Deseja realmente excluir este aluno?")) return;
+
+      const res = await fetch(`${urlAPI}/${id}`, {
+        method: "DELETE"
+      });
+
+      if (res.status === 204) {
+        listarAlunos();
+      } else {
+        alert("Erro ao deletar aluno.");
+      }
+    }
+
+    document.getElementById("formCadastro").addEventListener("submit", cadastrarAluno);
+
+    // Carrega os alunos ao abrir a página
+    listarAlunos();
+  </script>
+</body>
+</html>
